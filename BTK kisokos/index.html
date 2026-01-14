@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <title>TERMINÁL | SOD-FIB KÖZPONTI PARANCSNOKSÁG</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+  <!-- FIREBASE RTDB (KÖZÖS ADATOK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap');
+
+    :root{
+      --bg:#010307;
+      --line:rgba(0,212,255,.18);
+      --line2:rgba(0,212,255,.10);
+      --cyan:#00d4ff;
+      --red:#ff3b3b;
+      --green:#25ff72;
+      --yellow:#ffd400;
+      --text:#eaf6ff;
+      --muted:rgba(234,246,255,.55);
+
+      --fs:16px;
+      --fsHead:12px;
+
+      --header-real: 170px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:'Rajdhani',sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(900px 500px at 50% -20%, rgba(0,212,255,.10), transparent 60%),
+        linear-gradient(180deg, rgba(0,212,255,.04), transparent 35%),
+        var(--bg);
+      min-height:100vh;
+      padding-top: var(--header-real);
+    }
+
+    body:before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(to right, rgba(0,212,255,.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,212,255,.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity:.16;
+      mix-blend-mode:screen;
+    }
+    body:after{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,.30) 50%, transparent 100%);
+      opacity:.30;
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus{
+      -webkit-text-fill-color: var(--text) !important;
+      box-shadow: 0 0 0px 1000px rgba(0,0,0,.65) inset !important;
+      transition: background-color 9999s ease-out 0s;
+      caret-color: var(--text);
+    }
+
+    .fixed-container{
+      position:fixed;
+      top:0; left:0;
+      width:100%;
+      z-index:2000;
+      background: rgba(0,0,0,0.72);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(9px);
+      overflow:hidden;
+    }
+
+    .fixed-container:before{
+      content:"";
+      position:absolute; inset:-2px;
+      pointer-events:none;
+      background:
+        radial-gradient(700px 120px at 25% 30%, rgba(0,212,255,.35), transparent 65%),
+        radial-gradient(700px 120px at 75% 30%, rgba(255,59,59,.30), transparent 65%),
+        linear-gradient(90deg, rgba(0,212,255,0.00), rgba(0,212,255,.18), rgba(255,59,59,.18), rgba(0,212,255,0.00));
+      background-size: 100% 100%, 100% 100%, 220% 100%;
+      background-position: 0 0, 0 0, 0% 0;
+      mix-blend-mode: screen;
+      opacity:.85;
+      animation: headerGlow 3.8s ease-in-out infinite;
+      filter: saturate(1.25);
+    }
+    @keyframes headerGlow{
+      0%   { opacity:.55; background-position:0 0, 0 0, 0% 0; }
+      50%  { opacity:.95; background-position:0 0, 0 0, 100% 0; }
+      100% { opacity:.55; background-position:0 0, 0 0, 0% 0; }
+    }
+
+    .header-system{
+      position:relative;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 10px 22px;
+      gap: 16px;
+      z-index: 2;
+    }
+
+    .side-logo{
+      height: 64px;
+      opacity:.95;
+      filter: drop-shadow(0 0 10px rgba(0,212,255,.15));
+    }
+    .side-logo-right{
+      height: 78px;
+      opacity:.95;
+      filter: drop-shadow(0 0 12px rgba(0,212,255,.18)) brightness(.85) contrast(1.15);
+    }
+
+    .title-center{
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      min-width: 320px;
+    }
+    .title-center h1{
+      font-family:'Orbitron',sans-serif;
+      color:var(--cyan);
+      margin:0;
+      font-size: 20px;
+      letter-spacing: .8px;
+      text-shadow: 0 0 18px rgba(0,212,255,.12);
+    }
+
+    .subline{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      font-family:'Orbitron',sans-serif;
+      font-size: 12px;
+      color: rgba(234,246,255,.78);
+    }
+    .subline .stack{ display:flex; flex-direction:column; gap:2px; align-items:center; }
+    .subline .stack span{ line-height: 1.1; }
+
+    .edit-pencil{
+      cursor:pointer;
+      color: var(--cyan);
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.35);
+      clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+      user-select:none;
+    }
+    .edit-pencil:hover{ border-color: rgba(0,212,255,.35); }
+
+    .edit-badge{
+      display:none;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border: 1px solid rgba(255,212,0,.35);
+      background: rgba(255,212,0,.10);
+      color: var(--yellow);
+      font-family:'Orbitron',sans-serif;
+      font-size: 12px;
+      letter-spacing: .6px;
+      clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+    }
+    .edit-badge .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: var(--yellow);
+      box-shadow: 0 0 12px rgba(255,212,0,.40);
+    }
+
+    .nav-grid{
+      position:relative;
+      z-index:2;
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      padding: 8px 12px 14px;
+      flex-wrap:wrap;
+    }
+    .cmd-btn{
+      border:1px solid var(--line);
+      color:var(--cyan);
+      background:linear-gradient(180deg, rgba(0,212,255,.08), rgba(0,0,0,.45));
+      font-family:'Orbitron',sans-serif;
+      font-size: 13px;
+      letter-spacing: .5px;
+      padding: 12px 26px;
+      cursor:pointer;
+      clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+      transition: .15s ease;
+      white-space:nowrap;
+    }
+    .cmd-btn:hover{ border-color: rgba(0,212,255,.35); }
+    .cmd-btn.active{
+      background:linear-gradient(180deg, rgba(0,212,255,.95), rgba(0,212,255,.55));
+      color:#001318;
+      box-shadow:0 0 18px rgba(0,212,255,.35);
+      border-color:rgba(0,212,255,.55);
+    }
+
+    .main-frame{
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 14px 18px 28px;
+    }
+    .page{ display:none; }
+    .page.active{ display:block; }
+
+    .search-bar{
+      width:100%;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.65) !important;
+      color:var(--text);
+      padding:18px 18px;
+      font-family:'Orbitron',sans-serif;
+      font-size: var(--fs);
+      outline:none;
+      box-shadow: inset 0 0 0 1px rgba(0,212,255,.04);
+      margin-bottom: 12px;
+      -webkit-appearance:none;
+    }
+    .search-bar::placeholder{ color:rgba(234,246,255,.35); }
+    .search-bar:focus{ border-color:rgba(0,212,255,.35); }
+
+    .form-panel{
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.30);
+      box-shadow: inset 0 0 0 1px rgba(0,212,255,.04);
+      padding: 12px;
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:10px;
+      margin-bottom:12px;
+      align-items:flex-start;
+    }
+    .form-panel input,
+    .form-panel select{
+      width:100%;
+      background:rgba(0,0,0,.65) !important;
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:12px 12px;
+      font-family:'Orbitron',sans-serif;
+      font-size: var(--fs);
+      outline:none;
+      -webkit-appearance:none;
+    }
+    .form-panel input::placeholder{ color:rgba(234,246,255,.35); }
+
+    .record-btn{
+      background: linear-gradient(180deg, rgba(37,255,114,.95), rgba(37,255,114,.55)) !important;
+      color:#00140a !important;
+      border: 1px solid rgba(37,255,114,.45) !important;
+      box-shadow: 0 0 18px rgba(37,255,114,.22);
+    }
+
+    .table-wrap{
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.24);
+      box-shadow: inset 0 0 0 1px rgba(0,212,255,.04);
+    }
+    .data-table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    .data-table th{
+      font-family:'Orbitron',sans-serif;
+      font-size: var(--fsHead);
+      color:var(--cyan);
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      text-align:left;
+      padding:16px 14px;
+      border-bottom:1px solid var(--line);
+      background: rgba(0,0,0,.92);
+      backdrop-filter: blur(6px);
+      position: sticky;
+      top: var(--header-real);
+      z-index: 80;
+      box-shadow: 0 8px 18px rgba(0,0,0,.55);
+      white-space:nowrap;
+      line-height: 1.2;
+    }
+    .data-table td{
+      padding:14px 14px;
+      border-bottom:1px solid var(--line2);
+      font-size: var(--fs);
+      color:var(--text);
+      background:rgba(0,0,0,.10);
+      line-height: 1.15;
+    }
+    .data-table tr:nth-child(even) td{ background:rgba(0,0,0,.16); }
+    .data-table tr:hover td{ background:rgba(0,212,255,.05); }
+
+    .data-table th:last-child,
+    .data-table td:last-child{
+      width: 150px;
+      min-width: 150px;
+    }
+
+    .btk-cat td{
+      padding:18px 14px !important;
+      text-align:center !important;
+      font-family:'Orbitron',sans-serif !important;
+      color:var(--red) !important;
+      letter-spacing:1px;
+      font-size: 18px;
+      background:rgba(0,0,0,.16) !important;
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      font-weight: 700;
+    }
+    .btk-sub td{
+      text-align:center !important;
+      font-style:italic;
+      color:rgba(234,246,255,.55) !important;
+      font-size: var(--fs);
+      background:rgba(0,0,0,.12) !important;
+    }
+
+    .cell-green{ color:var(--green) !important; font-weight:700; }
+    .cell-red{ color:var(--red) !important; font-weight:700; }
+
+    .rank-tag{
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 800;
+      color:#001018;
+      font-size: 13px;
+      font-family:'Orbitron',sans-serif;
+      display:inline-block;
+      white-space:nowrap;
+    }
+    .r-green{ background: #25ff72; }
+    .r-blue{ background: #00b3ff; }
+    .r-orange{ background: #ff7b00; }
+
+    .drag-handle{ cursor: grab; color: var(--cyan); width: 30px; text-align:center; }
+
+    .del-btn{
+      background: rgba(0,0,0,.45);
+      border: 1px solid rgba(255,59,59,.55);
+      color: var(--red);
+      padding: 8px 12px;
+      cursor:pointer;
+      font-family:'Orbitron',sans-serif;
+      font-size: 12px;
+      letter-spacing:.4px;
+      text-transform: uppercase;
+      clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+      white-space:nowrap;
+    }
+    .del-btn:hover{ border-color: rgba(255,59,59,.85); box-shadow: 0 0 14px rgba(255,59,59,.18); }
+
+    .flag-box{ position:relative; }
+    .flag-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      padding: 12px 12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.65);
+      cursor:pointer;
+      user-select:none;
+      min-height: 56px;
+    }
+    .flag-title{
+      font-family:'Orbitron',sans-serif;
+      color: rgba(234,246,255,.8);
+      font-size: 13px;
+      white-space:nowrap;
+      padding-top: 2px;
+    }
+    .flag-selected{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      justify-content:flex-start;
+      align-items:flex-start;
+      flex:1;
+      margin-top: 2px;
+      overflow:hidden;
+    }
+    .flag-caret{
+      color: var(--cyan);
+      font-family:'Orbitron',sans-serif;
+      padding-top: 2px;
+    }
+    .flag-menu{
+      position:absolute;
+      top: calc(100% + 8px);
+      left:0;
+      width:100%;
+      z-index:1000;
+      background: rgba(0,0,0,.92);
+      border:1px solid var(--line);
+      box-shadow: 0 0 22px rgba(0,212,255,.18);
+      display:none;
+      padding:10px;
+    }
+    .flag-menu.open{ display:block; }
+    .flag-search{
+      width:100%;
+      background: rgba(0,0,0,.65);
+      border:1px solid var(--line);
+      color: var(--text);
+      padding:10px 10px;
+      font-family:'Orbitron',sans-serif;
+      font-size: 13px;
+      outline:none;
+      margin-bottom:10px;
+      -webkit-appearance:none;
+    }
+    .flag-items{ display:flex; flex-direction:column; gap:8px; max-height: 220px; overflow:auto; padding-right:4px; }
+    .flag-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      cursor:pointer;
+      padding: 6px 6px;
+      border: 1px solid transparent;
+    }
+    .flag-item:hover{ border-color: rgba(0,212,255,.25); background: rgba(0,212,255,.05); }
+    .pill{
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-family:'Orbitron',sans-serif;
+      font-size: 12px;
+      color:#001018;
+      font-weight: 800;
+      white-space:nowrap;
+      line-height: 1.1;
+      display:inline-flex;
+      align-items:center;
+    }
+    .p-yellow{ background: #ffd36a; }
+    .p-gray{ background: #9aa4ad; }
+    .p-orange{ background: #ffb05c; }
+    .p-red{ background: #ff6b6b; }
+    .p-purple{ background: #c7a6ff; }
+
+    .flag-check{
+      color: var(--green);
+      font-family:'Orbitron',sans-serif;
+      font-size: 12px;
+      opacity: .95;
+    }
+    .flag-footer{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px solid var(--line2);
+      color: rgba(234,246,255,.55);
+      font-family:'Orbitron',sans-serif;
+      font-size: 12px;
+    }
+    .flag-footer .mini-pencil{
+      color: rgba(234,246,255,.65);
+      border:1px solid var(--line2);
+      padding: 4px 8px;
+    }
+
+    #passwordModal{
+      display:none;
+      position:fixed;
+      z-index:9999;
+      left:0; top:0;
+      width:100%; height:100%;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(6px);
+    }
+    .modal-content{
+      background: rgba(0,0,0,.78);
+      border: 1px solid var(--line);
+      width: 360px;
+      margin: 12% auto;
+      padding: 24px;
+      text-align:center;
+      clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+      box-shadow: 0 0 22px rgba(0,212,255,.18);
+    }
+    .modal-content h2{
+      font-family:'Orbitron',sans-serif;
+      color: var(--cyan);
+      margin: 0 0 12px;
+      font-size: 16px;
+      letter-spacing:.6px;
+    }
+    .modal-content small{
+      display:block;
+      color: rgba(234,246,255,.65);
+      font-family:'Orbitron',sans-serif;
+      margin-bottom: 12px;
+    }
+    .modal-content input{
+      width: 85%;
+      background:rgba(0,0,0,.65) !important;
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:12px 12px;
+      font-family:'Orbitron',sans-serif;
+      font-size: var(--fs);
+      text-align:center;
+      outline:none;
+      -webkit-appearance:none;
+    }
+
+    .edit-mode td[contenteditable="true"]{
+      outline: 2px dashed rgba(255,212,0,.80);
+      outline-offset: -6px;
+      background: rgba(255,212,0,.04);
+    }
+
+    .edit-tools{
+      display:none;
+      border:1px solid rgba(255,212,0,.25);
+      background: rgba(0,0,0,.40);
+      box-shadow: inset 0 0 0 1px rgba(255,212,0,.05);
+      margin: 0 0 12px;
+      padding: 12px;
+    }
+    .edit-tools .title{
+      font-family:'Orbitron',sans-serif;
+      color: var(--yellow);
+      letter-spacing:.7px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .edit-tools .title .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: var(--yellow);
+      box-shadow: 0 0 12px rgba(255,212,0,.35);
+    }
+    .edit-tools .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .edit-tools input{
+      background:rgba(0,0,0,.65) !important;
+      border:1px solid rgba(255,212,0,.25);
+      color:var(--text);
+      padding:12px 12px;
+      font-family:'Orbitron',sans-serif;
+      font-size: var(--fs);
+      outline:none;
+    }
+    .edit-tools input::placeholder{ color: rgba(234,246,255,.35); }
+    .edit-tools .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    #toastHost{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 99999;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      pointer-events:none;
+    }
+    .toast{
+      pointer-events:none;
+      min-width: 280px;
+      max-width: 560px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.85);
+      box-shadow: 0 0 24px rgba(0,212,255,.16);
+      font-family:'Orbitron',sans-serif;
+      font-size: 13px;
+      clip-path: polygon(6% 0, 100% 0, 94% 100%, 0% 100%);
+      opacity:0;
+      transform: translateY(8px);
+      transition: .18s ease;
+    }
+    .toast.show{ opacity:1; transform: translateY(0); }
+    .toast.ok{ border-color: rgba(37,255,114,.35); }
+    .toast.warn{ border-color: rgba(255,212,0,.35); }
+    .toast.err{ border-color: rgba(255,59,59,.35); }
+
+    @media (max-width: 900px){
+      .cmd-btn{ font-size: 12px; padding: 10px 18px; }
+      .btk-cat td{ font-size: 16px; }
+      .side-logo{ height: 54px; }
+      .side-logo-right{ height: 66px; }
+      .title-center h1{ font-size: 18px; }
+      .data-table th:last-child, .data-table td:last-child{ width: 140px; min-width: 140px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="toastHost"></div>
+
+  <div id="passwordModal">
+    <div class="modal-content">
+      <h2 id="pwTitle">HITELLESÍTÉS</h2>
+      <small id="pwHint">Add meg a kódot.</small>
+      <input type="password" id="pwInput" placeholder="KÓD">
+      <div style="margin-top:14px; display:flex; gap:10px; justify-content:center;">
+        <button class="cmd-btn" onclick="checkPassword()">BELÉPÉS</button>
+        <button class="cmd-btn" style="border-color:rgba(255,59,59,.35); color:var(--red);" onclick="closeModal()">MÉGSE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fixed-container" id="fixedHeader">
+    <div class="header-system">
+      <img src="fib_logo.png" class="side-logo" alt="FIB">
+
+      <div class="title-center">
+        <h1>SOD-FIB btk kisokos</h1>
+
+        <div class="subline">
+          <div class="stack">
+            <span>SOD = Special Operations Division</span>
+            <span>FIB = Federal Investigation Bureau</span>
+          </div>
+
+          <span id="editBadge" class="edit-badge"><span class="dot"></span> SZERKESZTÉSI ÜZEMMÓD</span>
+
+          <span class="edit-pencil" onclick="requestEditToggle()" title="Szerkesztés">✎</span>
+        </div>
+      </div>
+
+      <img src="combined_logo.png" class="side-logo-right" alt="SOD/FIB">
+    </div>
+
+    <div class="nav-grid">
+      <button class="cmd-btn active" onclick="showPage('btk', this)">BTK BÜNTETÉSEK</button>
+      <button class="cmd-btn" onclick="showPage('fib', this)">FIB FEGYVEREK</button>
+      <button class="cmd-btn" onclick="showPage('sod', this)">SOD FEGYVEREK</button>
+      <button class="cmd-btn" onclick="openModal('staff', this)">SZEMÉLYZETI SOD</button>
+      <button class="cmd-btn" onclick="showPage('codes', this)">RÁDIÓKÓDOK</button>
+    </div>
+  </div>
+
+  <div class="main-frame">
+
+    <!-- BTK -->
+    <div id="btk" class="page active">
+      <input type="text" class="search-bar" id="btkSearch"
+             onkeyup="filterTable('btkBody', 'btkSearch')"
+             placeholder="GYORSKERESÉS A BTK-BAN...">
+
+      <div id="btkEditTools" class="edit-tools">
+        <div class="title"><span class="dot"></span> BTK SZERKESZTŐ</div>
+
+        <div class="grid">
+          <input id="btk_code" placeholder="Rövidítés (pl. BR)">
+          <input id="btk_desc" placeholder="Büntetési tétel">
+          <input id="btk_fine" placeholder="Csekk (pl. 10.000 € - 20.000 €)">
+          <input id="btk_fib" placeholder="FIB Cella (pl. 10 - 30 hónap)">
+          <input id="btk_state" placeholder="Állami Börtön (pl. 50 - 100 Hónap)">
+        </div>
+
+        <div class="row">
+          <button class="cmd-btn record-btn" onclick="addBtkItem()">ÚJ TÉTEL</button>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="grid">
+          <input id="btk_cat" placeholder="Új kategória neve (pl. Kereskedelem.)">
+        </div>
+
+        <div class="row">
+          <button class="cmd-btn record-btn" onclick="addBtkCategory()">ÚJ KATEGÓRIA</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table editable" data-savekey="btk_html_v19">
+          <thead>
+            <tr>
+              <th>RÖVIDÍTÉS</th>
+              <th>BÜNTETÉSI TÉTEL</th>
+              <th>CSEKK</th>
+              <th>FIB CELLA</th>
+              <th>ÁLLAMI BÖRTÖN</th>
+            </tr>
+          </thead>
+
+          <tbody id="btkBody">
+            <tr class="btk-sub"><td colspan="5">Itt nem kell hozzáadni a REM és a TE, mert benne van. Viszont ha lövöldözik akkor azt pluszba hozzá kell</td></tr>
+
+            <tr class="btk-cat"><td colspan="5">Rablások</td></tr>
+            <tr><td>RBR</td><td>Ruhabolt Rablás (+REM, TE)</td><td>10.000 € - 20.000 €</td><td class="cell-green">10 - 30 hónap</td><td class="cell-red">------</td></tr>
+            <tr><td>BR</td><td>Boltrablás (+REM, TE)</td><td>10.000 € - 20.000 €</td><td class="cell-green">10 - 30 hónap</td><td class="cell-red">------</td></tr>
+            <tr><td>ÉBR</td><td>Ékszerbolt Rablás (+REM, TE)</td><td>15.000 € - 25.000 €</td><td class="cell-green">10 - 30 hónap</td><td class="cell-red">------</td></tr>
+            <tr><td>BKR</td><td>Bankrablás (+REM, TE)</td><td>20.000 € - 30.000 €</td><td class="cell-green">20 - 30 hónap</td><td class="cell-red">------</td></tr>
+            <tr><td>ÁBR</td><td>Állami Bankrablás</td><td>------</td><td class="cell-green">------</td><td class="cell-red">50 - 100 Hónap</td></tr>
+            <tr><td>TE</td><td>Túszjtés</td><td>------</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>ATMR</td><td>ATM Rablás</td><td>20.000 € - 30.000 €</td><td class="cell-green">10 - 30 hónap</td><td class="cell-red">------</td></tr>
+
+            <tr class="btk-cat"><td colspan="5">Kereskedelem.</td></tr>
+            <tr><td>KT</td><td>Kábítószer terjesztés</td><td>100€ / gramm</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>KB</td><td>Kábítószer birtoklása</td><td>50€ / gramm</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>IFB</td><td>Illegális fegyver birtoklása</td><td>10.000 € - 20.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>IFE</td><td>Illegális fegyver értékesítése</td><td>15.000 € - 25.000 €</td><td class="cell-green">10 - 20 hónap</td><td class="cell-red">------</td></tr>
+
+            <tr class="btk-cat"><td colspan="5">Rendőri és Hivatalos személy intézkedésének akadályozása.</td></tr>
+            <tr><td>HF</td><td>Hatóság félrevezetése</td><td>5.000 € - 10.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>RSZT</td><td>Rendvédelemmel szembeni tiszteletlen beszéd</td><td>1.000 € - 4.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>HSZEE</td><td>Hivatali személy elleni erőszak</td><td>10.000 € - 15.000 €</td><td class="cell-green">10-20</td><td class="cell-red">------</td></tr>
+            <tr><td>HSZEGYK</td><td>Hivatali személy elleni gyilkossági kísérlet</td><td>------</td><td class="cell-green">20 - 30</td><td class="cell-red">------</td></tr>
+            <tr><td>HSZM</td><td>Hivatali személy meggyilkolása</td><td>------</td><td class="cell-green">------</td><td class="cell-red">50 - 100 Hónap</td></tr>
+            <tr><td>HSZM</td><td>Hivatali személy megvesztegetése</td><td>2.000 € - 5.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>RMA</td><td>Rendőri munka akadályozása</td><td>1.000 € - 2.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>RUM</td><td>Rendőri utasítás megtagadása</td><td>1.000 € - 2.500 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>FSZ</td><td>Fogolyszöktetés</td><td>------</td><td class="cell-green">------</td><td class="cell-red">50 - 100 Hónap</td></tr>
+            <tr><td>REM</td><td>Rendvédelem elöli menekülés</td><td>2.500 € - 5.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>IRVR</td><td>Illegális rendezvényen való részvétel</td><td>3.500 € - 5.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>IRSZ</td><td>Illegális rendezvényen szervezés</td><td>5.000 € - 10.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+
+            <tr class="btk-cat"><td colspan="5">Város veszélyvédelme</td></tr>
+            <tr><td>BH</td><td>Birtokháborítás</td><td>5.000 € - 10.000 €</td><td class="cell-green">------</td><td class="cell-red">------</td></tr>
+            <tr><td>TCS</td><td>Terrorcselekmény</td><td>------</td><td class="cell-green">------</td><td class="cell-red">50 - 100 Hónap</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SZEMÉLYZET -->
+    <div id="szemelyzet" class="page">
+      <div class="form-panel">
+        <input type="text" id="sd" placeholder="Discord név">
+        <input type="text" id="si" placeholder="IC név">
+        <input type="text" id="sj" placeholder="Jelvényszám">
+
+        <select id="sr">
+          <option value="Vezérezredes">Vezérezredes</option>
+          <option value="Ezredes">Ezredes</option>
+          <option value="Alezredes">Alezredes</option>
+          <option value="Százados">Százados</option>
+          <option value="Főhadnagy">Főhadnagy</option>
+          <option value="Hadnagy">Hadnagy</option>
+          <option value="Őrmester III">Őrmester III</option>
+          <option value="Kadét">Kadét</option>
+        </select>
+
+        <div class="flag-box" id="flagBox">
+          <div class="flag-head" onclick="toggleFlagMenu()">
+            <span class="flag-title">Flagek</span>
+            <div class="flag-selected" id="flagSelected"></div>
+            <span class="flag-caret">▾</span>
+          </div>
+
+          <div class="flag-menu" id="flagMenu">
+            <input class="flag-search" id="flagSearch" placeholder="Keresés..." onkeyup="filterFlagMenu()">
+            <div class="flag-items" id="flagItems"></div>
+            <div class="flag-footer">
+              <span>Kattints a kiválasztáshoz</span>
+              <span class="mini-pencil">✎</span>
+            </div>
+          </div>
+        </div>
+
+        <input type="text" id="se" placeholder="Előléptetve (Dátum)">
+
+        <select id="sc">
+          <option value="vez">VEZÉRKAR</option>
+          <option value="par">PARANCSNOKI CSOPORT</option>
+          <option value="fel">FELÜGYELETI CSOPORT</option>
+          <option value="koz">KÖZRENDŐRÖK</option>
+        </select>
+
+        <button class="cmd-btn record-btn" onclick="addS()">HOZZÁADÁS</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th width="30">#</th>
+              <th>DISCORD NÉV</th>
+              <th>IC NÉV</th>
+              <th>J. SZ.</th>
+              <th>RENDFOKOZAT</th>
+              <th>FLAGEK</th>
+              <th>ELŐLÉPTETVE</th>
+              <th>TÖRLÉS</th>
+            </tr>
+          </thead>
+
+          <tbody id="vez" class="sort-grp"><tr class="btk-cat"><td colspan="8">VEZÉRKAR</td></tr></tbody>
+          <tbody id="par" class="sort-grp"><tr class="btk-cat"><td colspan="8">PARANCSNOKI CSOPORT</td></tr></tbody>
+          <tbody id="fel" class="sort-grp"><tr class="btk-cat"><td colspan="8">FELÜGYELETI CSOPORT</td></tr></tbody>
+          <tbody id="koz" class="sort-grp"><tr class="btk-cat"><td colspan="8">KÖZRENDŐRÖK</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FIB FEGYVEREK -->
+    <div id="fib" class="page">
+      <div class="form-panel">
+        <input type="text" id="f1" placeholder="NÉV">
+        <input type="text" id="f2" placeholder="Típus">
+        <input type="text" id="f3" placeholder="Lőszer">
+        <input type="text" id="f4" placeholder="Sorozatszám">
+        <input type="text" id="f5" placeholder="Intézkedő személy neve">
+        <input type="text" id="f6" placeholder="Dátum">
+        <button class="cmd-btn record-btn" onclick="addG('fib',['f1','f2','f3','f4','f5','f6'])">RÖGZÍTÉS</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>NÉV</th><th>TÍPUS</th><th>LŐSZER</th><th>SOROZATSZÁM</th><th>INTÉZKEDŐ</th><th>DÁTUM</th><th>TÖRLÉS</th>
+            </tr>
+          </thead>
+          <tbody id="fibBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SOD FEGYVEREK -->
+    <div id="sod" class="page">
+      <div class="form-panel">
+        <input type="text" id="s1" placeholder="NÉV">
+        <input type="text" id="s2" placeholder="Típus">
+        <input type="text" id="s3" placeholder="Lőszer">
+        <input type="text" id="s4" placeholder="Sorozatszám">
+        <input type="text" id="s5" placeholder="Intézkedő személy neve">
+        <input type="text" id="s6" placeholder="Dátum">
+        <button class="cmd-btn record-btn" onclick="addG('sod',['s1','s2','s3','s4','s5','s6'])">RÖGZÍTÉS</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>NÉV</th><th>TÍPUS</th><th>LŐSZER</th><th>SOROZATSZÁM</th><th>INTÉZKEDŐ</th><th>DÁTUM</th><th>TÖRLÉS</th>
+            </tr>
+          </thead>
+          <tbody id="sodBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RÁDIÓKÓDOK -->
+    <div id="codes" class="page">
+      <div class="form-panel">
+        <input type="text" id="c1" placeholder="KÓD (pl. 10-4)">
+        <input type="text" id="c2" placeholder="JELENTÉS">
+        <button class="cmd-btn record-btn" onclick="addCode()">HOZZÁADÁS</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table editable" data-savekey="codes_table_v19">
+          <thead>
+            <tr><th>KÓD</th><th>JELENTÉS</th><th>TÖRLÉS</th></tr>
+          </thead>
+          <tbody id="codesBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ===================== FIREBASE RTDB (KÖZÖS ADATOK) ===================== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyBaR-FF0wJSlDtUSCVU02BT2kZuYFLBWFE",
+      authDomain: "sod-fib.firebaseapp.com",
+      databaseURL: "https://sod-fib-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "sod-fib",
+      storageBucket: "sod-fib.firebasestorage.app",
+      appId: "1:921892789416:web:f5b419c094ca1406b2769d"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const rtdb = firebase.database();
+
+    const SHARED_ROOT = "shared_v19";
+
+    const KEYS = {
+      BTK_HTML: "btk_html_v19",
+      CODES: "codes_v19",
+      FIB: "fib_v19",
+      SOD: "sod_v19",
+      STAFF: "s_v19"
+    };
+
+    const pendingRemote = { btkHtml: null, codes: null };
+    const refKey = (key) => rtdb.ref(`${SHARED_ROOT}/${key}`);
+
+    function lsGet(key){ return localStorage.getItem(key); }
+    function lsSet(key, val){ localStorage.setItem(key, val); }
+
+    async function ensureShared(key, fallbackValue){
+      const snap = await refKey(key).once("value");
+      const remoteVal = snap.val();
+
+      if(remoteVal !== null && remoteVal !== undefined){
+        if(typeof remoteVal === "string"){
+          lsSet(key, remoteVal);
+          return remoteVal;
+        }else{
+          const str = JSON.stringify(remoteVal);
+          lsSet(key, str);
+          return remoteVal;
+        }
+      }
+
+      const localRaw = lsGet(key);
+      if(localRaw){
+        if(key === KEYS.BTK_HTML){
+          await refKey(key).set(localRaw);
+          return localRaw;
+        }else{
+          try{
+            const parsed = JSON.parse(localRaw);
+            await refKey(key).set(parsed);
+            return parsed;
+          }catch(e){}
+        }
+      }
+
+      await refKey(key).set(fallbackValue);
+      if(typeof fallbackValue === "string") lsSet(key, fallbackValue);
+      else lsSet(key, JSON.stringify(fallbackValue));
+      return fallbackValue;
+    }
+
+    function subscribeShared(key, onValue){
+      refKey(key).on("value", (snap)=> onValue(snap.val()));
+    }
+
+    function setShared(key, value){
+      if(typeof value === "string") lsSet(key, value);
+      else lsSet(key, JSON.stringify(value));
+      return refKey(key).set(value);
+    }
+
+    function txArrayPush(key, item){
+      return refKey(key).transaction((cur)=>{
+        const arr = Array.isArray(cur) ? cur : [];
+        arr.push(item);
+        return arr;
+      });
+    }
+
+    function txArrayRemoveIndex(key, idx){
+      return refKey(key).transaction((cur)=>{
+        const arr = Array.isArray(cur) ? cur : [];
+        if(idx >= 0 && idx < arr.length) arr.splice(idx, 1);
+        return arr;
+      });
+    }
+
+    /* ===================== DISCORD LOG (OPCIONÁLIS) ===================== */
+    const DISCORD_WEBHOOK_URL = ""; // ha kell: ide tedd
+
+    async function logToDiscord(action, details){
+      if(!DISCORD_WEBHOOK_URL) return;
+      const now = new Date().toLocaleString("hu-HU");
+      const payload = {
+        username: "SOD-FIB LOG",
+        embeds: [{
+          title: action,
+          description: details || "—",
+          color: 5814783,
+          footer: { text: "Idő: " + now }
+        }]
+      };
+      try{
+        await fetch(DISCORD_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      }catch(e){}
+    }
+
+    /* ===================== TOAST ===================== */
+    function showToast(msg, type="ok"){
+      const host = document.getElementById("toastHost");
+      const t = document.createElement("div");
+      t.className = "toast " + (type || "ok");
+      t.textContent = msg;
+      host.appendChild(t);
+      requestAnimationFrame(()=>t.classList.add("show"));
+      setTimeout(()=>{
+        t.classList.remove("show");
+        setTimeout(()=>t.remove(), 220);
+      }, 2200);
+    }
+
+    /* ===================== HEADER HEIGHT (sticky) ===================== */
+    function syncHeaderHeight(){
+      const h = document.getElementById("fixedHeader");
+      if(!h) return;
+      const px = h.offsetHeight + "px";
+      document.documentElement.style.setProperty("--header-real", px);
+      document.body.style.paddingTop = px;
+    }
+    window.addEventListener("resize", syncHeaderHeight);
+
+    /* ===================== MODAL ===================== */
+    let curT = "";
+    let lB = null;
+
+    function openModal(t, b){
+      curT = t;
+      if(b) lB = b;
+
+      const title = document.getElementById("pwTitle");
+      const hint  = document.getElementById("pwHint");
+
+      title.textContent = "HITELLESÍTÉS";
+      if(t === "staff") hint.textContent = "SZEMÉLYZETI LISTA megnyitása.";
+      else if(t === "edit") hint.textContent = "SZERKESZTÉSI ÜZEMMÓD indítása.";
+      else hint.textContent = "Add meg a kódot.";
+
+      document.getElementById('passwordModal').style.display='block';
+      document.getElementById('pwInput').value="";
+      setTimeout(()=>document.getElementById('pwInput').focus(), 60);
+    }
+
+    function closeModal(){
+      document.getElementById('passwordModal').style.display='none';
+      document.getElementById('pwInput').value="";
+    }
+
+    function checkPassword(){
+      const p = document.getElementById('pwInput').value;
+
+      if(curT === 'staff' && p === "Dallas"){
+        showPage('szemelyzet', lB);
+        closeModal();
+        logToDiscord("SZEMÉLYZETI LISTA MEGNYITVA", "Belépés sikeres.");
+        return;
+      }
+
+      if(curT === 'edit' && p === "1234"){
+        closeModal();
+        toggleEditMode(true);
+        return;
+      }
+
+      alert("HIBÁS KÓD!");
+      logToDiscord("HIBA", "Hibás kód próbálkozás (" + curT + ").");
+    }
+
+    /* ===================== NAV ===================== */
+    function showPage(id, b){
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+
+      document.querySelectorAll('.cmd-btn').forEach(btn=>btn.classList.remove('active'));
+      if(b) b.classList.add('active');
+
+      logToDiscord("OLDAL VÁLTÁS", "Megnyitva: " + id);
+    }
+
+    /* ===================== SEARCH ===================== */
+    function filterTable(bodyId, inputId){
+      const q = (document.getElementById(inputId).value || "").trim().toLowerCase();
+      const rows = document.querySelectorAll(`#${bodyId} tr`);
+
+      if(q === ""){
+        rows.forEach(r=>r.style.display="");
+        return;
+      }
+
+      rows.forEach(r=>{
+        if(r.classList.contains("btk-cat") || r.classList.contains("btk-sub")){
+          r.style.display = "none";
+          return;
+        }
+        r.style.display = r.innerText.toLowerCase().includes(q) ? "" : "none";
+      });
+    }
+
+    /* ===================== EDIT MODE ===================== */
+    let editMode = false;
+    let editChanges = [];
+
+    function requestEditToggle(){
+      if(editMode){
+        toggleEditMode(false);
+        return;
+      }
+      openModal("edit");
+    }
+
+    function wireEditTracking(enable){
+      document.querySelectorAll(".editable td").forEach(td=>{
+        if(td.querySelector("button,input,select,textarea")) return;
+        if(enable){
+          td.addEventListener("focus", onCellFocus);
+          td.addEventListener("blur", onCellBlur);
+        } else {
+          td.removeEventListener("focus", onCellFocus);
+          td.removeEventListener("blur", onCellBlur);
+        }
+      });
+    }
+
+    function onCellFocus(e){
+      const td = e.currentTarget;
+      td.dataset._orig = td.innerText;
+    }
+
+    function onCellBlur(e){
+      const td = e.currentTarget;
+      const from = (td.dataset._orig || "");
+      const to = td.innerText;
+      if(from !== to){
+        const tr = td.parentElement;
+        const table = td.closest("table");
+        const savekey = table?.dataset?.savekey || "unknown";
+        const rowIndex = Array.from(tr.parentElement.children).indexOf(tr);
+        const colIndex = Array.from(tr.children).indexOf(td);
+        editChanges.push({ table: savekey, row: rowIndex, col: colIndex, from, to });
+      }
+    }
+
+    function toggleEditMode(forceOn){
+      const turningOn = (typeof forceOn === "boolean") ? forceOn : !editMode;
+      editMode = turningOn;
+
+      document.body.classList.toggle('edit-mode', editMode);
+      document.getElementById("editBadge").style.display = editMode ? "inline-flex" : "none";
+      document.getElementById("btkEditTools").style.display = editMode ? "block" : "none";
+
+      document.querySelectorAll(".editable td").forEach(td=>{
+        if(td.querySelector("button,input,select,textarea")) return;
+        td.contentEditable = editMode;
+      });
+
+      wireEditTracking(editMode);
+
+      if(editMode){
+        editChanges = [];
+        showToast("SZERKESZTÉSI ÜZEMMÓD AKTÍV", "warn");
+        logToDiscord("SZERKESZTÉS INDÍTVA", "Szerkesztési üzemmód belépés.");
+      } else {
+        saveEditableTables();
+        showToast("SZERKESZTÉS MENTVE, KILÉPVE", "ok");
+
+        const changeCount = editChanges.length;
+        const preview = editChanges.slice(0, 8).map(c=>`• ${c.table} [${c.row+1}:${c.col+1}] "${c.from}" -> "${c.to}"`).join("\n");
+        logToDiscord(
+          "SZERKESZTÉS MENTVE",
+          `Változtatott cellák: ${changeCount}\n` + (preview ? ("\n" + preview + (changeCount>8 ? `\n... (+${changeCount-8} db)` : "")) : "")
+        );
+
+        if(pendingRemote.btkHtml){
+          document.getElementById("btkBody").innerHTML = pendingRemote.btkHtml;
+          pendingRemote.btkHtml = null;
+        }
+        if(pendingRemote.codes){
+          pendingRemote.codes = null;
+          renderCodes();
+        }
+      }
+    }
+
+    function saveEditableTables(){
+      const btk = document.getElementById("btkBody");
+      if(btk){
+        const html = btk.innerHTML;
+        setShared(KEYS.BTK_HTML, html);
+      }
+
+      const cb = document.getElementById("codesBody");
+      if(cb){
+        const rows = Array.from(cb.querySelectorAll("tr"));
+        const data = [];
+        rows.forEach(r=>{
+          const tds = r.querySelectorAll("td");
+          if(tds.length >= 2){
+            const code = tds[0].innerText.trim();
+            const meaning = tds[1].innerText.trim();
+            if(code && meaning) data.push({code, meaning});
+          }
+        });
+        setShared(KEYS.CODES, data);
+        renderCodes();
+      }
+    }
+
+    /* ===================== BTK: ADD ===================== */
+    function addBtkItem(){
+      if(!editMode){
+        showToast("Ehhez szerkesztési üzemmód kell.", "err");
+        return;
+      }
+      const code  = (document.getElementById("btk_code").value || "").trim();
+      const desc  = (document.getElementById("btk_desc").value || "").trim();
+      const fine  = (document.getElementById("btk_fine").value || "").trim();
+      const fib   = (document.getElementById("btk_fib").value || "").trim();
+      const state = (document.getElementById("btk_state").value || "").trim();
+
+      if(!code || !desc){
+        showToast("Rövidítés és Büntetési tétel kötelező.", "err");
+        return;
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(code)}</td>
+        <td>${escapeHtml(desc)}</td>
+        <td>${escapeHtml(fine || "------")}</td>
+        <td class="cell-green">${escapeHtml(fib || "------")}</td>
+        <td class="cell-red">${escapeHtml(state || "------")}</td>
+      `;
+      document.getElementById("btkBody").appendChild(tr);
+
+      ["btk_code","btk_desc","btk_fine","btk_fib","btk_state"].forEach(id=>document.getElementById(id).value="");
+
+      showToast("BTK tétel hozzáadva.", "ok");
+      logToDiscord("BTK ÚJ TÉTEL", `${code} | ${desc} | ${fine || "------"} | ${fib || "------"} | ${state || "------"}`);
+      editChanges.push({ table:"btk_html_v19", row:"ADD", col:"ROW", from:"—", to:`${code} - ${desc}` });
+
+      setShared(KEYS.BTK_HTML, document.getElementById("btkBody").innerHTML);
+    }
+
+    function addBtkCategory(){
+      if(!editMode){
+        showToast("Ehhez szerkesztési üzemmód kell.", "err");
+        return;
+      }
+      const name = (document.getElementById("btk_cat").value || "").trim();
+      if(!name){
+        showToast("Add meg a kategória nevét.", "err");
+        return;
+      }
+      const tr = document.createElement("tr");
+      tr.className = "btk-cat";
+      tr.innerHTML = `<td colspan="5">${escapeHtml(name)}</td>`;
+      document.getElementById("btkBody").appendChild(tr);
+
+      document.getElementById("btk_cat").value = "";
+
+      showToast("BTK kategória hozzáadva.", "ok");
+      logToDiscord("BTK ÚJ KATEGÓRIA", name);
+      editChanges.push({ table:"btk_html_v19", row:"ADD", col:"CAT", from:"—", to:name });
+
+      setShared(KEYS.BTK_HTML, document.getElementById("btkBody").innerHTML);
+    }
+
+    /* ===================== WEAPONS (KÖZÖS) ===================== */
+    function addG(t, ids){
+      const v = ids.map(id=>document.getElementById(id).value.trim());
+      if(v.some(x=>!x)){
+        showToast("Minden mezőt tölts ki!", "err");
+        return;
+      }
+
+      const key = (t === "fib") ? KEYS.FIB : KEYS.SOD;
+      txArrayPush(key, v);
+
+      ids.forEach(id=>document.getElementById(id).value="");
+      showToast("Rögzítve.", "ok");
+      logToDiscord("FEGYVER RÖGZÍTVE", `Típus: ${t}\nAdat: ${v.join(" | ")}`);
+    }
+
+    function renderG(t){
+      const b = document.getElementById(t+'Body');
+      b.innerHTML="";
+      const key = (t === "fib") ? KEYS.FIB : KEYS.SOD;
+
+      let arr = [];
+      try{
+        const raw = lsGet(key);
+        arr = raw ? JSON.parse(raw) : [];
+      }catch(e){ arr = []; }
+
+      arr.forEach((d,i)=>{
+        let r = b.insertRow();
+        d.forEach(val=>r.insertCell().innerText=val);
+        const x = r.insertCell();
+        x.innerHTML = `<button class="del-btn" onclick="delG('${t}',${i})">TÖRLÉS</button>`;
+      });
+    }
+
+    function delG(t,i){
+      const key = (t === "fib") ? KEYS.FIB : KEYS.SOD;
+      txArrayRemoveIndex(key, i);
+      showToast("Törölve.", "ok");
+      logToDiscord("FEGYVER TÖRÖLVE", `Típus: ${t}\nIndex: ${i}`);
+    }
+
+    /* ===================== RADIO CODES (KÖZÖS) ===================== */
+    const DEFAULT_CODES = [
+      {code:"10-1", meaning:"Vétel vége / Adás vége"},
+      {code:"10-4", meaning:"Vettem / Értettem"},
+      {code:"10-20", meaning:"Helymeghatározás"}
+    ];
+
+    function getCodesDB(){
+      const raw = lsGet(KEYS.CODES);
+      if(!raw){
+        lsSet(KEYS.CODES, JSON.stringify(DEFAULT_CODES));
+        return [...DEFAULT_CODES];
+      }
+      try{
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) return parsed;
+      }catch(e){}
+      lsSet(KEYS.CODES, JSON.stringify(DEFAULT_CODES));
+      return [...DEFAULT_CODES];
+    }
+
+    function renderCodes(){
+      const dbArr = getCodesDB();
+      const body = document.getElementById("codesBody");
+      body.innerHTML = "";
+      dbArr.forEach((row, i)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(row.code || "")}</td>
+          <td>${escapeHtml(row.meaning || "")}</td>
+          <td><button class="del-btn" onclick="delCode(${i})">TÖRLÉS</button></td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function addCode(){
+      const code = document.getElementById("c1").value.trim();
+      const meaning = document.getElementById("c2").value.trim();
+      if(!code || !meaning){
+        showToast("Add meg a kódot és a jelentést!", "err");
+        return;
+      }
+      txArrayPush(KEYS.CODES, {code, meaning});
+      document.getElementById("c1").value = "";
+      document.getElementById("c2").value = "";
+      showToast("Rádiókód hozzáadva.", "ok");
+      logToDiscord("RÁDIÓKÓD HOZZÁADVA", `${code} = ${meaning}`);
+    }
+
+    function delCode(i){
+      txArrayRemoveIndex(KEYS.CODES, i);
+      showToast("Rádiókód törölve.", "ok");
+      logToDiscord("RÁDIÓKÓD TÖRÖLVE", `Index: ${i}`);
+    }
+
+    /* ===================== STAFF + FLAGS ===================== */
+    const FLAG_DEFS = [
+      {id:"athelyezes", label:"Áthelyezésre vár", pill:"p-yellow"},
+      {id:"felmondas", label:"Felmondásra vár", pill:"p-gray"},
+      {id:"kikuldes", label:"Kiküldésre vár", pill:"p-orange"},
+      {id:"figyelni", label:"Figyelni kell rá", pill:"p-red"},
+      {id:"frissfok", label:"Frissen fokozatot le", pill:"p-purple"}
+    ];
+
+    let selectedFlags = [];
+
+    function buildFlagMenu(){
+      const items = document.getElementById("flagItems");
+      items.innerHTML = "";
+      FLAG_DEFS.forEach(f=>{
+        const div = document.createElement("div");
+        div.className = "flag-item";
+        div.dataset.id = f.id;
+        div.innerHTML = `
+          <span class="pill ${f.pill}">${escapeHtml(f.label)}</span>
+          <span class="flag-check" style="visibility:hidden;">✔</span>
+        `;
+        div.onclick = ()=>toggleFlag(f.id);
+        items.appendChild(div);
+      });
+      renderSelectedFlags();
+    }
+
+    function toggleFlagMenu(){
+      document.getElementById("flagMenu").classList.toggle("open");
+      document.getElementById("flagSearch").value = "";
+      filterFlagMenu();
+    }
+
+    function filterFlagMenu(){
+      const q = document.getElementById("flagSearch").value.toLowerCase();
+      document.querySelectorAll("#flagItems .flag-item").forEach(it=>{
+        const id = it.dataset.id;
+        const def = FLAG_DEFS.find(x=>x.id===id);
+        const txt = (def?.label || "").toLowerCase();
+        it.style.display = txt.includes(q) ? "" : "none";
+      });
+      refreshFlagChecks();
+    }
+
+    function toggleFlag(id){
+      if(selectedFlags.includes(id)){
+        selectedFlags = selectedFlags.filter(x=>x!==id);
+      } else {
+        selectedFlags.push(id);
+      }
+      renderSelectedFlags();
+      refreshFlagChecks();
+    }
+
+    function refreshFlagChecks(){
+      document.querySelectorAll("#flagItems .flag-item").forEach(it=>{
+        const id = it.dataset.id;
+        const check = it.querySelector(".flag-check");
+        check.style.visibility = selectedFlags.includes(id) ? "visible" : "hidden";
+      });
+    }
+
+    function renderSelectedFlags(){
+      const box = document.getElementById("flagSelected");
+      box.innerHTML = "";
+      selectedFlags.forEach(id=>{
+        const def = FLAG_DEFS.find(x=>x.id===id);
+        if(!def) return;
+        const span = document.createElement("span");
+        span.className = `pill ${def.pill}`;
+        span.textContent = def.label;
+        box.appendChild(span);
+      });
+      refreshFlagChecks();
+    }
+
+    function addS(){
+      const v = ["sd","si","sj","sr","se","sc"].map(i=>document.getElementById(i).value.trim());
+      if(!v[0] || !v[1] || !v[2] || !v[4]){
+        showToast("Minden mezőt tölts ki (név, IC név, jelvény, dátum)!", "err");
+        return;
+      }
+
+      const item = {
+        id: Date.now(),
+        d: v[0],
+        i: v[1],
+        j: v[2],
+        r: v[3],
+        f: [...selectedFlags],
+        e: v[4],
+        c: v[5]
+      };
+
+      txArrayPush(KEYS.STAFF, item);
+
+      ["sd","si","sj","se"].forEach(id=>document.getElementById(id).value="");
+      selectedFlags = [];
+      renderSelectedFlags();
+
+      showToast("Személyzet hozzáadva.", "ok");
+      logToDiscord("SZEMÉLYZET HOZZÁADVA", `Discord: ${item.d}\nIC: ${item.i}\nJelvény: ${item.j}\nRendfokozat: ${item.r}\nDátum: ${item.e}\nCsoport: ${item.c}`);
+    }
+
+    function renderS(){
+      document.querySelectorAll('.sort-grp').forEach(g=>{
+        g.querySelectorAll('.m-row').forEach(r=>r.remove());
+      });
+
+      let staffArr = [];
+      try{
+        const raw = lsGet(KEYS.STAFF);
+        staffArr = raw ? JSON.parse(raw) : [];
+      }catch(e){ staffArr = []; }
+
+      staffArr.forEach(m=>{
+        const r = document.createElement('tr');
+        r.className='m-row';
+        r.dataset.id = m.id;
+        r.dataset.flags = JSON.stringify(m.f || []);
+
+        const rLow = (m.r || "").toLowerCase();
+        let c = rLow.includes('ezredes') ? 'r-green' : (rLow.includes('nagy') ? 'r-blue' : 'r-orange');
+
+        const flagsHTML = (m.f || []).map(fid=>{
+          const def = FLAG_DEFS.find(x=>x.id===fid);
+          if(!def) return "";
+          return `<span class="pill ${def.pill}">${escapeHtml(def.label)}</span>`;
+        }).join(" ");
+
+        r.innerHTML = `
+          <td class="drag-handle">☰</td>
+          <td>${escapeHtml(m.d||"")}</td>
+          <td>${escapeHtml(m.i||"")}</td>
+          <td>${escapeHtml(m.j||"")}</td>
+          <td><span class="rank-tag ${c}">${escapeHtml(m.r||"")}</span></td>
+          <td>${flagsHTML || '<span style="color:rgba(234,246,255,.35);">—</span>'}</td>
+          <td>${escapeHtml(m.e||"")}</td>
+          <td><button class="del-btn" onclick="delS(${m.id})">TÖRLÉS</button></td>
+        `;
+        document.getElementById(m.c).appendChild(r);
+      });
+    }
+
+    function delS(id){
+      refKey(KEYS.STAFF).transaction((cur)=>{
+        const arr = Array.isArray(cur) ? cur : [];
+        return arr.filter(x=>x && x.id != id);
+      });
+      showToast("Törölve.", "ok");
+      logToDiscord("SZEMÉLYZET TÖRÖLVE", `ID: ${id}`);
+    }
+
+    /* ===================== SORTABLE ===================== */
+    function initSortable(){
+      document.querySelectorAll('.sort-grp').forEach(el=>{
+        new Sortable(el, {
+          group:'s',
+          animation:150,
+          handle:'.drag-handle',
+          onEnd:()=>{
+            let n=[];
+            document.querySelectorAll('.sort-grp').forEach(g=>{
+              g.querySelectorAll('.m-row').forEach(r=>{
+                const cells = r.cells;
+                const flags = JSON.parse(r.dataset.flags || "[]");
+                n.push({
+                  id: Number(r.dataset.id),
+                  d: cells[1].innerText,
+                  i: cells[2].innerText,
+                  j: cells[3].innerText,
+                  r: cells[4].innerText,
+                  f: flags,
+                  e: cells[6].innerText,
+                  c: g.id
+                });
+              });
+            });
+            setShared(KEYS.STAFF, n);
+            showToast("Átrendezés mentve.", "ok");
+            logToDiscord("SZEMÉLYZET ÁTRENDZEZVE", `Átrendezés történt. Összes sor: ${n.length}`);
+          }
+        });
+      });
+    }
+
+    /* ===================== UTILS ===================== */
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    document.addEventListener("click", (e)=>{
+      const box = document.getElementById("flagBox");
+      const menu = document.getElementById("flagMenu");
+      if(!box || !menu) return;
+      if(!box.contains(e.target)){
+        menu.classList.remove("open");
+      }
+    });
+
+    /* ===================== KÖZÖS BETÖLTÉS + REALTIME SZINKRON ===================== */
+    async function initSharedRealtime(){
+      try{
+        const btkFallback = document.getElementById("btkBody").innerHTML;
+
+        await ensureShared(KEYS.BTK_HTML, btkFallback);
+        await ensureShared(KEYS.CODES, DEFAULT_CODES);
+        await ensureShared(KEYS.FIB, []);
+        await ensureShared(KEYS.SOD, []);
+        await ensureShared(KEYS.STAFF, []);
+
+        subscribeShared(KEYS.BTK_HTML, (v)=>{
+          if(typeof v !== "string") return;
+          lsSet(KEYS.BTK_HTML, v);
+          if(editMode){
+            pendingRemote.btkHtml = v;
+            return;
+          }
+          document.getElementById("btkBody").innerHTML = v;
+        });
+
+        subscribeShared(KEYS.CODES, (v)=>{
+          const arr = Array.isArray(v) ? v : DEFAULT_CODES;
+          lsSet(KEYS.CODES, JSON.stringify(arr));
+          if(editMode){
+            pendingRemote.codes = true;
+            return;
+          }
+          renderCodes();
+        });
+
+        subscribeShared(KEYS.FIB, (v)=>{
+          const arr = Array.isArray(v) ? v : [];
+          lsSet(KEYS.FIB, JSON.stringify(arr));
+          renderG("fib");
+        });
+
+        subscribeShared(KEYS.SOD, (v)=>{
+          const arr = Array.isArray(v) ? v : [];
+          lsSet(KEYS.SOD, JSON.stringify(arr));
+          renderG("sod");
+        });
+
+        subscribeShared(KEYS.STAFF, (v)=>{
+          const arr = Array.isArray(v) ? v : [];
+          lsSet(KEYS.STAFF, JSON.stringify(arr));
+          renderS();
+        });
+
+        const btk = lsGet(KEYS.BTK_HTML);
+        if(btk) document.getElementById("btkBody").innerHTML = btk;
+
+        renderCodes();
+        renderS();
+        renderG("fib");
+        renderG("sod");
+      }catch(e){
+        console.error("Firebase initSharedRealtime hiba:", e);
+        showToast("Firebase hiba: valószínű Rules tiltja (PERMISSION_DENIED).", "err");
+      }
+    }
+
+    /* ===================== INIT ===================== */
+    window.onload = async () => {
+      syncHeaderHeight();
+      setTimeout(syncHeaderHeight, 300);
+      setTimeout(syncHeaderHeight, 1200);
+
+      buildFlagMenu();
+      initSortable();
+
+      await initSharedRealtime();
+
+      logToDiscord("TERMINÁL BETÖLTVE", "Oldal megnyitva.");
+    };
+  </script>
+
+</body>
+</html>
