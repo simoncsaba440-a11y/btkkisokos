@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>S.O.D – Jelentkezés</title>
+
+  <link rel="icon" type="image/png" href="/favicon.png">
+
+  <style>
+    :root{
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.60);
+
+      --blue: #3aa0ff;
+      --red:  #ff3c3c;
+
+      --lineIdle: rgba(255,255,255,.70);
+      --lineFocus: #00ff78;
+
+      --type: #ffd54a; /* SÁRGA */
+
+      --panelBg: rgba(0,0,0,.22);
+      --panelBorder: rgba(255,255,255,.12);
+
+      --chipOffBg: rgba(255,255,255,.10);
+      --chipOffBorder: rgba(255,255,255,.18);
+      --chipOffText: rgba(255,255,255,.75);
+
+      /* KIVÁLASZTOTT OPCIÓ = KÉK */
+      --chipOnBg: rgba(58,160,255,.16);
+      --chipOnBorder: rgba(58,160,255,.70);
+      --chipOnText: rgba(58,160,255,.98);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color: var(--text);
+      background:#000;
+    }
+
+    .bg{
+      position: fixed;
+      inset: 0;
+      background: url("./background.jpeg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      filter: saturate(1.25) contrast(1.10) brightness(1.02);
+      z-index: -3;
+      transform: scale(1.01);
+    }
+    .overlay{
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.42));
+      z-index: -2;
+    }
+    .fade{
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,.00), rgba(0,0,0,.26));
+      z-index: -1;
+      pointer-events:none;
+    }
+
+    .wrap{
+      min-height: 100%;
+      display:flex;
+      justify-content:center;
+      padding: 14px 10px 60px;
+    }
+    .shell{
+      width: min(1600px, 98vw);
+      background: var(--panelBg);
+      border: 1px solid var(--panelBorder);
+      border-radius: 14px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* TOPBAR */
+    .topbar{
+      position: relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 12px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.12);
+      min-height: 72px;
+      overflow: hidden;
+    }
+
+    /* === ERŐSEBB SZIRÉNA SÁV (kék legyen kékebb) === */
+    .topbar::after{
+      content:"";
+      position:absolute;
+      inset:-12px;
+      pointer-events:none;
+
+      background:
+        radial-gradient(260px 95px at 18% 50%, rgba(0,120,255,.95), transparent 60%), /* KÉKEBB */
+        radial-gradient(260px 95px at 82% 50%, rgba(255,60,60,.92), transparent 60%),
+        linear-gradient(90deg, rgba(0,120,255,.18), rgba(255,60,60,.14)); /* KÉKEBB */
+
+      mix-blend-mode: screen;
+      opacity: 0;
+      filter: blur(1px) saturate(1.35);
+      animation: sirenBar 0.55s infinite;
+    }
+
+    @keyframes sirenBar{
+      0%{
+        opacity:.15;
+        transform: translateX(-14px);
+        filter: blur(1px) brightness(1.05) saturate(1.3);
+      }
+      15%{
+        opacity:.95;
+        transform: translateX(-6px);
+        filter: blur(2px) brightness(1.65) saturate(1.9);
+      }
+      30%{
+        opacity:.18;
+        transform: translateX(0px);
+        filter: blur(1px) brightness(1.05) saturate(1.3);
+      }
+      50%{
+        opacity:.15;
+        transform: translateX(14px);
+        filter: blur(1px) brightness(1.05) saturate(1.3);
+      }
+      65%{
+        opacity:.95;
+        transform: translateX(6px);
+        filter: blur(2px) brightness(1.65) saturate(1.9);
+      }
+      80%{
+        opacity:.18;
+        transform: translateX(0px);
+        filter: blur(1px) brightness(1.05) saturate(1.3);
+      }
+      100%{
+        opacity:.15;
+        transform: translateX(-14px);
+        filter: blur(1px) brightness(1.05) saturate(1.3);
+      }
+    }
+
+    .tabs{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      padding-right: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tabbtn{
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.24);
+      color: rgba(255,255,255,.86);
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-weight: 950;
+      cursor:pointer;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+      white-space: nowrap;
+      position: relative;
+      z-index: 1;
+    }
+    .tabbtn:hover{
+      transform: translateY(-1px);
+      background: rgba(0,0,0,.34);
+      border-color: rgba(255,255,255,.24);
+    }
+    .tabbtn.active{
+      border-color: rgba(58,160,255,.55);
+      box-shadow: 0 0 16px rgba(58,160,255,.16);
+    }
+
+    .navlogo{
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      z-index: 1;
+    }
+    .navlogo img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+    }
+
+    .content{
+      padding: 18px 18px 22px;
+    }
+
+    .header{
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      margin-bottom: 12px;
+    }
+    .header h1{
+      margin: 0;
+      font-size: 34px;
+      font-weight: 1000;
+      letter-spacing: .4px;
+      color: var(--blue);
+      text-align:center;
+    }
+    .header h2{
+      margin: 10px 0 0;
+      font-size: 30px;
+      font-weight: 1000;
+      letter-spacing: .4px;
+      color: var(--red);
+      text-align:center;
+    }
+
+    .page{ display:none; }
+    .page.active{ display:block; }
+
+    .blockTitle{
+      margin: 18px 0 10px;
+      font-weight: 1000;
+      color: rgba(255,255,255,.92);
+      font-size: 18px;
+    }
+    .list{
+      margin: 0;
+      padding-left: 18px;
+      color: rgba(255,255,255,.86);
+      line-height: 1.7;
+    }
+    .list li{ margin: 6px 0; }
+
+    .kw{ color: var(--type); font-weight: 1000; }
+    #page-jelentkezes .kw{ color: inherit; font-weight: inherit; }
+
+    /* FORM */
+    form{ padding: 6px 6px 0; }
+    .q{
+      padding: 22px 0 16px;
+      border-top: 1px solid rgba(255,255,255,.10);
+    }
+    .q:first-child{ border-top: 0; }
+
+    .label{
+      font-weight: 950;
+      font-size: 16px;
+      margin: 0 0 12px;
+      color: var(--blue);
+    }
+    .req{ color: var(--red); }
+
+    input[type="text"],
+    input[type="number"],
+    textarea{
+      width: 100%;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--type);
+      font-size: 14px;
+      padding: 10px 0 12px;
+      border-bottom: 2px solid var(--lineIdle);
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    textarea{ min-height: 70px; resize: vertical; }
+
+    input:focus, textarea:focus{
+      border-bottom-color: var(--lineFocus);
+      box-shadow: 0 10px 22px rgba(0,255,120,.10);
+    }
+
+    .error{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(255, 80, 80, .92);
+      display:none;
+    }
+    .error.show{ display:block; }
+
+    .divider{
+      margin: 26px 0 6px;
+      padding: 10px 0;
+      border-top: 1px solid rgba(255,255,255,.12);
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      color: rgba(255,255,255,.85);
+      font-weight: 1000;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+      user-select:none;
+    }
+    .divider .arrow{
+      display:inline-block;
+      transform: translateY(-1px);
+      color: rgba(255,255,255,.85);
+    }
+
+    .chips{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .chip{
+      position: relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--chipOffBorder);
+      background: var(--chipOffBg);
+      color: var(--chipOffText);
+      font-weight: 950;
+      cursor: pointer;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease, color .12s ease, box-shadow .12s ease;
+      user-select:none;
+    }
+    .chip:hover{ transform: translateY(-1px); }
+    .chip input{ position:absolute; opacity:0; pointer-events:none; }
+    .chip.on{
+      border-color: var(--chipOnBorder);
+      background: var(--chipOnBg);
+      color: var(--chipOnText);
+      box-shadow: 0 0 18px rgba(58,160,255,.18);
+    }
+
+    .actions{
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      display:flex;
+      justify-content:center;
+    }
+    button.submit{
+      cursor:pointer;
+      border-radius: 10px;
+      padding: 12px 22px;
+      font-weight: 1000;
+      border: 1px solid rgba(0,255,120,.55);
+      background: rgba(0,0,0,.88);
+      color: rgba(0,255,120,.95);
+      transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+    button.submit:hover{
+      transform: translateY(-1px);
+      background: rgba(0,0,0,.96);
+      box-shadow: 0 0 18px rgba(0,255,120,.18);
+    }
+    button.submit:disabled{ opacity:.55; cursor:not-allowed; }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.75);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      padding: 10px 14px;
+      color: rgba(255,255,255,.9);
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .16s ease, transform .16s ease;
+      backdrop-filter: blur(10px);
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    .honeypot{
+      position:absolute !important;
+      left:-9999px !important;
+      top:-9999px !important;
+      opacity:0 !important;
+      pointer-events:none !important;
+      height:1px !important;
+      width:1px !important;
+    }
+
+    /* Kártyák */
+    .cardsGrid{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .card{
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      overflow:hidden;
+      background: rgba(0,0,0,.18);
+    }
+    .card img{
+      width: 100%;
+      height: auto;
+      display:block;
+      object-fit: cover;
+    }
+    .cardBody{
+      padding: 10px 12px 12px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+    }
+    .cardTitle{
+      margin: 0 0 6px;
+      font-weight: 1000;
+      color: rgba(255,255,255,.92);
+      font-size: 16px;
+    }
+    .cardText{
+      margin: 0;
+      color: rgba(255,255,255,.82);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+    .cardWide{ grid-column: 1 / -1; }
+
+    /* Feltételek: bal szöveg + jobb kisebb kép */
+    .feltWrap{
+      display: grid;
+      grid-template-columns: 1.5fr .5fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .feltImg{
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(0,0,0,.18);
+      height: fit-content;
+      position: sticky;
+      top: 10px;
+      max-width: 320px;
+      margin-left: auto;
+    }
+    .feltImg img{
+      width: 100%;
+      height: auto;
+      display:block;
+      object-fit: cover;
+    }
+
+    @media (max-width: 900px){
+      .cardsGrid{ grid-template-columns: 1fr; }
+      .cardWide{ grid-column: auto; }
+      .feltWrap{ grid-template-columns: 1fr; }
+      .feltImg{ position: static; max-width: 520px; margin: 12px auto 0; }
+    }
+
+    @media (max-width: 700px){
+      .content{ padding: 14px 14px 18px; }
+      .header h1{ font-size: 22px; }
+      .header h2{ font-size: 24px; }
+      .navlogo{ width: 44px; height: 44px; }
+      .wrap{ padding: 10px 8px 50px; }
+      .shell{ width: 99vw; }
+      .topbar{ min-height: 66px; }
+      .tabs{ padding-right: 56px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="overlay" aria-hidden="true"></div>
+  <div class="fade" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="shell">
+
+      <div class="topbar">
+        <div class="tabs">
+          <button class="tabbtn active" type="button" data-tab="jelentkezes">Jelentkezés</button>
+          <button class="tabbtn" type="button" data-tab="feltetelek">Jelentkezés feltételei</button>
+          <button class="tabbtn" type="button" data-tab="alosztalyok">Alosztályaink</button>
+          <button class="tabbtn" type="button" data-tab="rolunk">Rólunk</button>
+        </div>
+
+        <div class="navlogo" title="S.O.D logo">
+          <img src="./logo.png" alt="S.O.D logo" />
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- Jelentkezés -->
+        <section class="page active" id="page-jelentkezes">
+          <div class="header">
+            <h1>Special Operations Division</h1>
+            <h2>Jelentkezés</h2>
+          </div>
+
+          <div class="honeypot" aria-hidden="true">
+            <input type="text" autocomplete="username">
+            <input type="password" autocomplete="current-password">
+            <input type="email" autocomplete="email">
+          </div>
+
+          <form id="sodForm" autocomplete="off" novalidate>
+            <div class="q">
+              <div class="label">Email-cím <span class="req">*</span></div>
+              <input type="text" data-key="email" required>
+              <div class="error" id="emailErr">Érvénytelen e-mail cím.</div>
+            </div>
+
+            <div class="q">
+              <div class="label">Discord neved : <span class="req">*</span></div>
+              <input type="text" data-key="discord_name" required>
+            </div>
+
+            <div class="q">
+              <div class="label">Discord ID: <span class="req">*</span></div>
+              <input type="text" data-key="discord_id" required>
+              <div class="error" id="dcIdErr">A Discord ID csak szám lehet (15–20 számjegy).</div>
+            </div>
+
+            <div class="q">
+              <div class="label">Hány éves vagy <span class="req">*</span></div>
+              <input type="number" data-key="age" min="1" max="99" required>
+            </div>
+
+            <div class="q">
+              <div class="label">Mióta rp zel <span class="req">*</span></div>
+              <input type="text" data-key="rp_since" required>
+            </div>
+
+            <div class="q">
+              <div class="label">Voltál e már bannolva : <span class="req">*</span></div>
+              <input type="text" data-key="banned" required>
+            </div>
+
+            <div class="q">
+              <div class="label">Mióta vagy a forma játékosa ? <span class="req">*</span></div>
+              <input type="text" data-key="forma_since" required>
+            </div>
+
+            <div class="q">
+              <div class="label">Voltál e már rendvédelembe: <span class="req">*</span></div>
+              <input type="text" data-key="lawexp" required>
+            </div>
+
+            <div class="q">
+              <div class="label">Heti hány órát tudnál aktív lenni? <span class="req">*</span></div>
+              <input type="text" data-key="weekly_hours" required>
+            </div>
+
+            <div class="divider">
+              <span>ic rész</span>
+              <span class="arrow">⬇</span>
+            </div>
+
+            <div class="q">
+              <div class="label">születési név : <span class="req">*</span></div>
+              <input type="text" data-key="birth_name" required>
+            </div>
+
+            <div class="q">
+              <div class="label">Telefonszám :</div>
+              <input type="text" data-key="phone">
+            </div>
+
+            <div class="q">
+              <div class="label">Fejtse ki az igazoltatás menetét és célját! (Min. 5 mondatban.) <span class="req">*</span></div>
+              <textarea data-key="idcheck_explain" required></textarea>
+              <div class="error" id="min5Err">Minimum 5 mondat szükséges.</div>
+            </div>
+
+            <div class="q">
+              <div class="label">Sorolj fel 5 kényszeritő eszkőzt : <span class="req">*</span></div>
+              <textarea data-key="coercive_tools" required></textarea>
+            </div>
+
+            <div class="q">
+              <div class="label">Igazoltatás menetet: <span class="req">*</span></div>
+              <textarea data-key="idcheck_steps" required></textarea>
+            </div>
+
+            <div class="q">
+              <div class="label">Egy férfi átkutathat egy hölgyet <span class="req">*</span></div>
+              <div class="chips" data-chips="search_female">
+                <label class="chip"><input type="radio" name="search_female" value="Igen">Igen</label>
+                <label class="chip"><input type="radio" name="search_female" value="Nem">Nem</label>
+                <label class="chip"><input type="radio" name="search_female" value="Ha parancsot kap">Ha parancsot kap</label>
+              </div>
+              <div class="error" id="searchFemaleErr">Válassz egy opciót.</div>
+            </div>
+
+            <div class="q">
+              <div class="label">Ha a Vezérezredes (legnagybb rang) azt mondja neked azt a személyt löd le te mit teszel: <span class="req">*</span></div>
+              <div class="chips" data-chips="shoot_order">
+                <label class="chip"><input type="radio" name="shoot_order" value="Megteszem">Megteszem</label>
+                <label class="chip"><input type="radio" name="shoot_order" value="Nemteszem meg">Nemteszem meg</label>
+                <label class="chip"><input type="radio" name="shoot_order" value="Nem teszem meg és jelentem">Nem teszem meg és jelentem</label>
+              </div>
+              <div class="error" id="shootErr">Válassz egy opciót.</div>
+            </div>
+
+            <div class="actions">
+              <button class="submit" id="submitBtn" type="submit">Beküldés</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Feltételek -->
+        <section class="page" id="page-feltetelek">
+          <div class="header">
+            <h1>Special Operations Division</h1>
+            <h2>Jelentkezés feltételei</h2>
+          </div>
+
+          <div class="feltWrap">
+            <div>
+              <div class="blockTitle">Alap feltételek</div>
+              <ul class="list">
+                <li>megfelelő kommunikáció</li>
+                <li><span class="kw">16</span> éves életkor</li>
+                <li>érett gondolkodás</li>
+                <li>az <span class="kw">RP</span> előnybe helyezése</li>
+                <li>szerverszabályzat ismerete</li>
+                <li><span class="kw">lojalitás</span> és <span class="kw">aktivitás</span></li>
+              </ul>
+
+              <div class="blockTitle">FiveM rendvédelemhez kapcsolódó elvárások</div>
+              <ul class="list">
+                <li><span class="kw">IC/OOC</span> szétválasztása, korrekt viselkedés minden helyzetben</li>
+                <li><span class="kw">Rangfegyelem</span> és szolgálati szabályok betartása</li>
+                <li><span class="kw">Rádiófegyelem</span>, tömör és érthető kommunikáció</li>
+                <li><span class="kw">Fegyverhasználati szabályok</span> ismerete, arányosság betartása</li>
+                <li><span class="kw">Intézkedési protokoll</span> követése (igazoltatás, bilincselés, előállítás)</li>
+                <li><span class="kw">Csapatmunka</span>, egységként való működés, társak biztosítása</li>
+                <li>kulturált konfliktuskezelés, provokációra nem reagálni OOC módon</li>
+              </ul>
+            </div>
+
+            <div class="feltImg">
+              <img src="./vezetok.png" alt="Special Operations Division vezetői">
+            </div>
+          </div>
+        </section>
+
+        <!-- Alosztályaink (2 külön kép) -->
+        <section class="page" id="page-alosztalyok">
+          <div class="header">
+            <h1>Special Operations Division</h1>
+            <h2>Alosztályaink</h2>
+          </div>
+
+          <div class="cardsGrid">
+            <div class="card">
+              <img src="./motoros.png" alt="L.S.M.U. – Motoros Alosztály">
+              <div class="cardBody">
+                <p class="cardTitle">🏍 L.S.M.U. – Motoros Alosztály</p>
+                <p class="cardText">
+                  Az <span class="kw">L.S.M.U.</span> a rendvédelem gyorsreagálású motoros egysége.
+                  Feladatuk a sürgős riasztások, üldözések, útbiztosítások és konvojkísérések végrehajtása.
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <img src="./legitamogato.png" alt="Légitámogató Alosztály">
+              <div class="cardBody">
+                <p class="cardTitle">🚁 Légitámogató Alosztály</p>
+                <p class="cardText">
+                  A <span class="kw">Légitámogató</span> Alosztály biztosítja a műveletek légi felderítését és irányítását.
+                  Valós idejű információt adnak a földi egységeknek.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Rólunk (nincs nagy csapatos kép) -->
+        <section class="page" id="page-rolunk">
+          <div class="header">
+            <h1>Special Operations Division</h1>
+            <h2>Rólunk</h2>
+          </div>
+
+          <div class="cardsGrid">
+            <div class="card cardWide">
+              <div class="cardBody">
+                <p class="cardTitle">Special Operations Division vezetői</p>
+                <p class="cardText">
+                  <span class="kw">Thomas Martinez</span> – <span class="kw">Vezérezredes</span><br>
+                  <span class="kw">Sullivan Dallas</span> – <span class="kw">Ezredes</span><br>
+                  <span class="kw">Aki Yuto</span> – <span class="kw">Alezredes</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <img src="./igazoltatas.png" alt="Igazoltatás">
+              <div class="cardBody">
+                <p class="cardTitle">Igazoltatás</p>
+                <p class="cardText">
+                  Igazoltatásnál amennyiben <span class="kw">együttműködő</span>, mi is azok leszünk.
+                  Működjön együtt és hamarabb tud tovább haladni a dolgára.
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <img src="./elfogas.png" alt="Elfogás">
+              <div class="cardBody">
+                <p class="cardTitle">Elfogás</p>
+                <p class="cardText">
+                  Ha valamit elkövetett ne ellenkezzen a kollégákkal; ebben az esetben
+                  <span class="kw">testikényszert</span> vagy <span class="kw">kényszerítő eszközt</span> is alkalmazhatunk.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // TAB váltás
+    const tabButtons = document.querySelectorAll('.tabbtn');
+    const pages = {
+      jelentkezes: document.getElementById('page-jelentkezes'),
+      feltetelek: document.getElementById('page-feltetelek'),
+      alosztalyok: document.getElementById('page-alosztalyok'),
+      rolunk: document.getElementById('page-rolunk'),
+    };
+
+    function setTab(name){
+      tabButtons.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+      Object.entries(pages).forEach(([k, el]) => el.classList.toggle('active', k === name));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    tabButtons.forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
+
+    // chip UI
+    function syncChips(groupEl){
+      const labels = Array.from(groupEl.querySelectorAll('.chip'));
+      labels.forEach(l => l.classList.remove('on'));
+      const checked = groupEl.querySelector('input:checked');
+      if (checked){
+        const onLabel = checked.closest('.chip');
+        if (onLabel) onLabel.classList.add('on');
+      }
+    }
+    document.querySelectorAll('[data-chips]').forEach(group => {
+      group.addEventListener('change', () => syncChips(group));
+      syncChips(group);
+    });
+
+    // toast
+    const toast = document.getElementById('toast');
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>toast.classList.remove('show'), 2400);
+    }
+
+    // hibák
+    const emailErr = document.getElementById('emailErr');
+    const dcIdErr = document.getElementById('dcIdErr');
+    const min5Err = document.getElementById('min5Err');
+    const searchFemaleErr = document.getElementById('searchFemaleErr');
+    const shootErr = document.getElementById('shootErr');
+
+    function setErr(el, on){
+      if (!el) return;
+      el.classList.toggle('show', !!on);
+    }
+
+    function isValidEmail(v){
+      return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test((v||"").trim());
+    }
+    function isValidDiscordId(v){
+      const t = (v||"").trim();
+      return /^\d{15,20}$/.test(t);
+    }
+    function countSentences(text){
+      const t = (text||"").trim();
+      if (!t) return 0;
+      const parts = t.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
+      return parts.length;
+    }
+
+    // ===== Discord webhookos jelentkezés =====
+    const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1458303622214455480/oeFN_YI_-mRgBPzjYC9tbPAUBwgh8XQcUkFXFdhfCKOR04PH941OXF5i_P8k7y2Eh9xb";
+    const ROLE_ID_TO_PING = "1457456094954913984";
+
+    function collectFormData(){
+      const data = {};
+      document.querySelectorAll('#sodForm [data-key]').forEach((el) => {
+        data[el.getAttribute('data-key')] = (el.value || "").trim();
+      });
+      const sf = document.querySelector('input[name="search_female"]:checked');
+      const so = document.querySelector('input[name="shoot_order"]:checked');
+      data.search_female = sf ? sf.value : "";
+      data.shoot_order = so ? so.value : "";
+      return data;
+    }
+
+    function qaField(question, answer){
+      const ans = (answer && answer.length) ? answer : "";
+      return { name: `🔴 ${question}`, value: `🟢 **${ans}**`, inline: false };
+    }
+
+    function buildDiscordPayload(data){
+      const header = "Érkezett az új jelentkezés - döntésre vár.";
+      const userPing = isValidDiscordId(data.discord_id) ? `<@${data.discord_id}>` : null;
+
+      let content = `<@&${ROLE_ID_TO_PING}> ${header}`;
+      if (userPing) content += `\n${userPing}`;
+
+      const fields = [
+        qaField("Email-cím", data.email),
+        qaField("Discord neved :", data.discord_name),
+        qaField("Discord ID:", data.discord_id),
+        qaField("Hány éves vagy", data.age),
+        qaField("Mióta rp zel", data.rp_since),
+        qaField("Voltál e már bannolva :", data.banned),
+        qaField("Mióta vagy a forma játékosa ?", data.forma_since),
+        qaField("Voltál e már rendvédelembe:", data.lawexp),
+        qaField("Heti hány órát tudnál aktív lenni?", data.weekly_hours),
+        { name: "⬇ IC rész", value: "", inline: false },
+        qaField("születési név :", data.birth_name),
+        qaField("Telefonszám :", data.phone),
+        qaField("Fejtse ki az igazoltatás menetét és célját! (Min. 5 mondatban.)", data.idcheck_explain),
+        qaField("Sorolj fel 5 kényszeritő eszkőzt :", data.coercive_tools),
+        qaField("Igazoltatás menetet:", data.idcheck_steps),
+        qaField("Egy férfi átkutathat egy hölgyet", data.search_female),
+        qaField("Ha a Vezérezredes (legnagybb rang) azt mondja neked azt a személyt löd le te mit teszel:", data.shoot_order),
+      ];
+
+      return {
+        content,
+        username: "Sod Jelentkezés",
+        embeds: [{
+          title: "Jelentkezés",
+          description: header,
+          color: 0x00FF78,
+          fields,
+          footer: { text: "SOD Jelentkezés - Döntésre vár" },
+          timestamp: new Date().toISOString()
+        }]
+      };
+    }
+
+    async function sendToDiscord(data){
+      if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.includes("PASTE_DISCORD_WEBHOOK_URL_HERE")) {
+        throw new Error("Nincs beállítva a Discord webhook URL.");
+      }
+      const res = await fetch(DISCORD_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildDiscordPayload(data))
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(()=> "");
+        throw new Error("Discord hiba: " + res.status + " " + txt);
+      }
+    }
+
+    // Submit
+    const form = document.getElementById('sodForm');
+    const btn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+
+      try{
+        const data = collectFormData();
+
+        const required = [
+          "email","discord_name","discord_id","age","rp_since","banned","forma_since","lawexp","weekly_hours",
+          "birth_name","idcheck_explain","coercive_tools","idcheck_steps"
+        ];
+        for (const k of required){
+          if (!data[k]) throw new Error("Kérlek töltsd ki az összes kötelező mezőt!");
+        }
+
+        const okEmail = isValidEmail(data.email);
+        setErr(emailErr, !okEmail);
+        if (!okEmail) throw new Error("Érvénytelen e-mail cím.");
+
+        const okDc = isValidDiscordId(data.discord_id);
+        setErr(dcIdErr, !okDc);
+        if (!okDc) throw new Error("Érvénytelen Discord ID.");
+
+        const ok5 = countSentences(data.idcheck_explain) >= 5;
+        setErr(min5Err, !ok5);
+        if (!ok5) throw new Error("Az igazoltatás kifejtése minimum 5 mondat legyen.");
+
+        const okSearch = !!data.search_female;
+        const okShoot  = !!data.shoot_order;
+        setErr(searchFemaleErr, !okSearch);
+        setErr(shootErr, !okShoot);
+        if (!okSearch || !okShoot) throw new Error("Kérlek válassz opciót az opciós kérdéseknél!");
+
+        await sendToDiscord(data);
+        showToast(" Jelentkezés elküldve ✅");
+
+        form.reset();
+        document.querySelectorAll('[data-chips]').forEach(syncChips);
+        setErr(emailErr,false); setErr(dcIdErr,false); setErr(min5Err,false);
+        setErr(searchFemaleErr,false); setErr(shootErr,false);
+
+      }catch(err){
+        showToast(err.message || "Hiba történt ❌");
+        console.error(err);
+      }finally{
+        btn.disabled = false;
+      }
+    });
+
+    // élő validálás
+    const emailInput = form.querySelector('[data-key="email"]');
+    emailInput.addEventListener('input', () => setErr(emailErr, !!emailInput.value && !isValidEmail(emailInput.value)));
+
+    const dcIdInput = form.querySelector('[data-key="discord_id"]');
+    dcIdInput.addEventListener('input', () => setErr(dcIdErr, !!dcIdInput.value && !isValidDiscordId(dcIdInput.value)));
+
+    const explain = form.querySelector('[data-key="idcheck_explain"]');
+    explain.addEventListener('input', () => setErr(min5Err, !!explain.value && countSentences(explain.value) < 5));
+  </script>
+</body>
+</html>
